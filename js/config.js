@@ -1,8 +1,8 @@
-// EDITA AQUÍ: número de WhatsApp (código de país + número, sin + ni espacios). Colombia = 57.
+
 const MIKOS = {
   whatsapp: "573222105073",
   pagos: ["Efectivo", "Transferencia"],
-  // Aviso de promo que se muestra arriba de "Arma tu burrito". Déjalo en "" para ocultarlo.
+  
   promo: "🔥 Promo válida desde mañana: combo con papas y gaseosa incluido",
   sizes: [
     { id: "mediano", name: "Mediano", price: 20000,
@@ -14,7 +14,7 @@ const MIKOS = {
       combo: "Combo: papas a la francesa + gaseosa incluidas",
       rules: { veg: 1, prot: 2, top: 2, esp: 1, salsa: 2 } }
   ],
-  // Cada producto usa la foto img/items/<nombre-en-minusculas-con-guiones>.jpg
+  
   groups: {
     prot: { title: "Proteína", items: [
       { n: "Carne de res",   note: "Porción 130 g" },
