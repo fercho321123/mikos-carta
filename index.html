@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MIKOS, territorio del sabor</title>
+<meta name="description" content="Carta virtual de burritos MIKOS. Arma tu burrito y pídelo a domicilio por WhatsApp.">
+<meta name="theme-color" content="#800100">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="top">
+  <a href="#inicio" class="brand"><img src="img/logo-wordmark.png" alt="MIKOS" height="30"></a>
+  <nav><a href="#armar">Armar</a><a href="#pedido">Pedido</a></nav>
+  <a class="btn sm" href="#pedido">Mi pedido <b class="count">0</b></a>
+</header>
+<main id="inicio">
+  <section class="hero">
+    <div class="copy">
+      <h1><span class="ln">Territorio</span><span class="ln">del sabor</span></h1>
+      <p>Burritos armados a tu manera: proteína, vegetal y toppings, en tamaño Mediano o XL. Pídelos a domicilio y confírmalos directo por WhatsApp.</p>
+      <a class="btn" href="#armar">Arma tu burrito</a>
+    </div>
+    <div class="art">
+      <img class="mono" src="img/logo-mikos.png" alt="MIKOS, mono con gafas y la lengua afuera">
+      <span class="sticker">Solo domicilios</span>
+    </div>
+  </section>
+  <div class="marquee" aria-hidden="true"><div id="marquee"></div></div>
+  <section id="armar" class="wrap">
+    <h2>Arma tu burrito</h2>
+    <p id="promo" class="promo" role="status"></p>
+    <div class="layout">
+      <div class="build">
+        <div class="group">
+          <div class="ghead"><span class="step">1</span><h3>Tamaño</h3></div>
+          <div id="sizes" class="sizes" role="radiogroup" aria-label="Tamaño"></div>
+        </div>
+        <div id="groups"></div>
+      </div>
+      <aside class="ticket" aria-label="Tu burrito">
+        <h3>Tu burrito <span id="tsize"></span></h3>
+        <ul id="tlines"></ul>
+        <div class="prog"><i id="pbar"></i></div>
+        <p id="status" role="status"></p>
+        <button class="btn" id="add" disabled>Agregar al pedido</button>
+        <a class="go" href="#pedido">Ver pedido (<b class="count">0</b>)</a>
+      </aside>
+    </div>
+  </section>
+  <div class="hz"></div>
+  <section id="pedido" class="wrap">
+    <h2>Tu pedido</h2>
+    <div class="order">
+      <ul id="cart" class="receipt"></ul>
+      <form id="form" class="form">
+        <label>Nombre<input name="nombre" required autocomplete="name"></label>
+        <label>Dirección de entrega<input name="dir" required autocomplete="street-address"></label>
+        <label>Forma de pago<select name="pago" id="pago"></select></label>
+        <label>Notas para la cocina<textarea name="notas" rows="2" placeholder="Sin picante, timbre dañado, etc."></textarea></label>
+        <button class="btn wa" type="submit">Enviar pedido por WhatsApp</button>
+      </form>
+    </div>
+  </section>
+</main>
+<footer><img src="img/logo-mikos.png" alt="" height="80"><p id="foot"></p></footer>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
