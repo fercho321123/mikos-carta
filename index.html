@@ -6,7 +6,7 @@
 <title>MIKOS, territorio del sabor</title>
 <meta name="description" content="Carta virtual de burritos MIKOS. Arma tu burrito y pídelo a domicilio por WhatsApp.">
 <meta name="theme-color" content="#800100">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=3">
 </head>
 <body>
 <header class="top">
@@ -35,8 +35,10 @@
         <div class="group">
           <div class="ghead"><span class="step">1</span><h3>Tamaño</h3></div>
           <div id="sizes" class="sizes" role="radiogroup" aria-label="Tamaño"></div>
+          <div id="combo" class="combo" role="radiogroup" aria-label="Solo o combo"></div>
         </div>
         <div id="groups"></div>
+        <div id="extras"></div>
       </div>
       <aside class="ticket" aria-label="Tu burrito">
         <h3>Tu burrito <span id="tsize"></span></h3>
@@ -54,18 +56,17 @@
     <div class="order">
       <ul id="cart" class="receipt"></ul>
       <form id="form" class="form">
-        // Formulario para ingresar datos del cliente
         <label>Nombre<input name="nombre" required autocomplete="name"></label>
         <label>Dirección de entrega<input name="dir" required autocomplete="street-address"></label>
         <label>Forma de pago<select name="pago" id="pago"></select></label>
-        <label>Notas para la cocina<textarea name="notas" rows="2" placeholder="Sin picante, timbre dañado, etc."></textarea></label>
+        <label>Notas para la cocina<textarea name="notas" rows="2" placeholder="Sin picante, sin salsas, etc."></textarea></label>
         <button class="btn wa" type="submit">Enviar pedido por WhatsApp</button>
       </form>
     </div>
   </section>
 </main>
 <footer><img src="img/logo-mikos.png" alt="" height="80"><p id="foot"></p></footer>
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>
