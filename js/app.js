@@ -1,176 +1,124 @@
-const $ = (s) => document.querySelector(s);
-const $$ = (s) => document.querySelectorAll(s);
-const slug = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const KEYS = Object.keys(MIKOS.groups);
-const LBL = { prot: ["proteína", "proteínas"], veg: ["vegetal", "vegetales"], top: ["topping", "toppings"], esp: ["topping especial", "toppings especiales"], salsa: ["salsa", "salsas"] };
-const money = (n) => "$" + (n || 0).toLocaleString("es-CO");
-
-// Lista plana de todo lo que se puede pedir en adición: { key, n, price }
-const ADDABLE = [];
-KEYS.forEach((g) => MIKOS.groups[g].items.forEach((it) => ADDABLE.push({ key: g + "|" + it.n, n: it.n, price: it.addPrice || MIKOS.groups[g].addPrice || 0 })));
-(MIKOS.extras || []).forEach((ex) => ADDABLE.push({ key: "extra|" + ex.n, n: ex.n, price: ex.price || 0 }));
-
-let size = MIKOS.sizes[0];
-let combo = false;
-let pick = Object.fromEntries(KEYS.map((k) => [k, []]));
-let addons = {}; // key -> cantidad
-let cart = [];
-try { cart = JSON.parse(localStorage.getItem("mikos-cart")) || []; } catch (e) {}
-cart = cart.filter((b) => typeof b.price === "number" && typeof b.combo === "boolean" && b.addons && typeof b.addons === "object" && KEYS.every((g) => Array.isArray(b[g])));
-
-const limit = (g) => size.rules[g];
-const done = (g) => pick[g].length === limit(g);
-const ready = () => KEYS.every(done);
-const basePrice = () => (combo ? size.priceCombo : size.priceSolo);
-const addonsTotal = () => Object.entries(addons).reduce((s, [k, q]) => s + q * (ADDABLE.find((a) => a.key === k)?.price || 0), 0);
-const burritoPrice = () => basePrice() + addonsTotal();
+// Interfaz: flujo Armar → Resumen → Datos → Enviar. Usa MK (core.js / order.js) y MIKOS (config.js).
+const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+const { money, esc, KEYS, slug } = MK;
+let draft = MK.blank(), editing = null, view = "armar", order = null, sent = false, undo = null;
+MK.cart.load();
+let cust = {}; try { cust = JSON.parse(localStorage.getItem("mikos-customer")) || {}; } catch (e) {}
+const incl = (g) => MK.limit(draft, g);
+const STEPS = ["Producto", "Tamaño", "Ingredientes", "Extras", "Resumen", "Datos", "Enviar"];
 
 function build() {
+  $("#info").innerHTML = ["Solo domicilios", MIKOS.schedule && "Horario: " + esc(MIKOS.schedule), `<a href="https://wa.me/${MIKOS.whatsapp}">WhatsApp</a>`].filter(Boolean).map((x) => `<li>${x}</li>`).join("");
   $("#marquee").innerHTML = Array(10).fill("MIKOS · Territorio del sabor").join(" · ");
-  $("#promo").textContent = MIKOS.promo || "";
-  $("#promo").hidden = !MIKOS.promo;
-
-  $("#sizes").innerHTML = MIKOS.sizes.map((s) => `<button type="button" role="radio" data-size="${s.id}"><span class="sn">${s.name}</span><span class="price">${money(s.priceSolo)}</span><span class="chips">${KEYS.map((g) => `<em>${s.rules[g]} ${LBL[g][s.rules[g] > 1 ? 1 : 0]}</em>`).join("")}</span>${s.includes ? `<span class="incl">Incluye: ${s.includes.join(", ")}</span>` : ""}</button>`).join("");
-
-  $("#combo").innerHTML = `
-    <button type="button" role="radio" data-combo="0"><span class="cn">Solo</span><span class="price"></span></button>
-    <button type="button" role="radio" data-combo="1"><span class="cn">Combo</span><span class="price"></span><small>${MIKOS.comboNote || ""}</small></button>`;
-
-  $("#groups").innerHTML = KEYS.map((g, i) => {
-    const G = MIKOS.groups[g];
-    return `<div class="group"><div class="ghead"><span class="step">${i + 2}</span><h3>${G.title}</h3><span class="cnt" data-cnt="${g}"></span></div><div class="grid">` +
-      G.items.map((it) => `<button type="button" class="card" data-g="${g}" data-n="${it.n}" aria-pressed="false">
-        <span class="ph"><i>${it.n[0]}</i><img src="img/items/${slug(it.n)}.jpg" alt="" loading="lazy" onerror="this.remove()"></span>
-        <span class="lab"><span class="nm">${it.n}</span>${it.note ? `<span class="nt">${it.note}</span>` : ""}</span>
-      </button>`).join("") + `</div></div>`;
-  }).join("");
-
-  $("#extras").innerHTML = `<div class="group"><div class="ghead"><span class="step">${KEYS.length + 2}</span><h3>Adiciones</h3><span class="cnt-label">Opcional</span></div><div class="grid addons">` +
-    ADDABLE.map((a) => `<div class="addon" data-key="${a.key}">
-      <span class="an">${a.n}</span><span class="ap">${money(a.price)} c/u</span>
-      <span class="stepper"><button type="button" class="dec" aria-label="Quitar ${a.n}">−</button><b data-qty="${a.key}">0</b><button type="button" class="inc" aria-label="Agregar ${a.n}">+</button></span>
-    </div>`).join("") + `</div></div>`;
-
-  $("#pago").innerHTML = MIKOS.pagos.map((p) => `<option>${p}</option>`).join("");
+  $("#promo").textContent = MIKOS.promo || ""; $("#promo").hidden = !MIKOS.promo;
+  $("#sizes").innerHTML = MIKOS.sizes.map((s) => `<button type="button" role="radio" data-size="${s.id}"><span class="sn">${esc(s.name)}</span><span class="price">${money(s.priceSolo)} <small>solo</small> · ${money(s.priceCombo)} <small>combo</small></span><span class="chips">${KEYS.map((g) => `<em>${s.rules[g]} ${MK.lbl(g, s.rules[g])}</em>`).join("")}</span>${s.includes ? `<span class="incl">Incluye: ${esc(s.includes.join(", "))}</span>` : ""}</button>`).join("");
+  $("#combo").innerHTML = `<button type="button" role="radio" data-combo="0"><span class="cn">Solo</span><span class="price"></span></button><button type="button" role="radio" data-combo="1"><span class="cn">Combo</span><span class="price"></span><small>${esc(MIKOS.comboNote || "")}</small></button><div id="drink" class="drinks" hidden></div>`;
+  $("#groups").innerHTML = KEYS.map((g, i) => { const G = MIKOS.groups[g]; return `<div class="group" data-grp="${g}"><div class="ghead"><span class="step">${i + 3}</span><h3>${esc(G.title)}</h3><span class="cnt" data-cnt="${g}"></span></div><p class="rule" data-rule="${g}"></p><div class="grid">` +
+    G.items.map((it) => `<button type="button" class="card" data-g="${g}" data-n="${esc(it.n)}" aria-pressed="false"><span class="ph"><i>${esc(it.n[0])}</i><img src="img/items/${slug(it.n)}.jpg" alt="" loading="lazy" onerror="this.remove()"></span><span class="lab"><span class="nm">${esc(it.n)}</span>${it.note ? `<span class="nt">${esc(it.note)}</span>` : ""}<span class="tag">INCLUIDO</span></span></button>`).join("") + `</div></div>`; }).join("");
+  const sec = [...KEYS, "extra"].map((g) => ({ g, t: g === "extra" ? "Otros" : MIKOS.groups[g].title, a: MK.ADDABLE.filter((x) => x.g === g) })).filter((x) => x.a.length);
+  $("#extras").innerHTML = `<div class="group"><div class="ghead"><span class="step">${KEYS.length + 3}</span><h3>¿QUIERES AGREGAR ALGO MÁS?</h3><span class="cnt-label">Opcional · se cobra aparte</span></div>` + sec.map((x) => `<h4 class="subhead">Extra ${esc(x.t.toLowerCase())}</h4><div class="grid addons">` + x.a.map((a) => `<div class="addon" data-key="${esc(a.key)}"><span class="an">${esc(a.n)}</span><span class="ap">EXTRA +${money(a.price)}</span><span class="stepper"><button type="button" class="dec" aria-label="Quitar ${esc(a.n)}">−</button><b data-qty="${esc(a.key)}">0</b><button type="button" class="inc" aria-label="Agregar ${esc(a.n)}">+</button></span></div>`).join("") + `</div>`).join("") + `</div>`;
+  $("#nstep").textContent = KEYS.length + 4; $("#note").maxLength = MIKOS.maxNote || 200;
+  $("#pago").innerHTML = `<option value="">Elige…</option>` + MIKOS.pagos.map((p) => `<option>${esc(p)}</option>`).join("");
+  Object.entries(cust).forEach(([k, v]) => { const f = $(`#form [name="${k}"]`); if (f && k !== "pagaCon") f.value = v; });
   $("#foot").textContent = `MIKOS, territorio del sabor. Solo domicilios. WhatsApp ${MIKOS.whatsapp}`;
-  selectSize(size.id);
-}
-
-function selectSize(id) {
-  size = MIKOS.sizes.find((s) => s.id === id) || MIKOS.sizes[0];
-  KEYS.forEach((g) => (pick[g] = []));
-  $$("#sizes button").forEach((b) => b.setAttribute("aria-checked", b.dataset.size === size.id));
-  paintCombo();
   paint();
 }
 
-function paintCombo() {
-  $$("#combo button").forEach((b) => {
-    const isCombo = b.dataset.combo === "1";
-    b.setAttribute("aria-checked", isCombo === combo);
-    b.querySelector(".price").textContent = money(isCombo ? size.priceCombo : size.priceSolo);
-  });
-}
-
 function paint() {
+  const s = MK.size(draft.size), p = MK.price(draft), errs = MK.checkLine(draft), bad = new Set(errs.map((e) => e.g));
+  $$("#sizes button").forEach((b) => b.setAttribute("aria-checked", b.dataset.size === draft.size));
+  $$("#combo button[data-combo]").forEach((b) => { const c = b.dataset.combo === "1"; b.setAttribute("aria-checked", c === draft.combo); b.querySelector(".price").textContent = money(c ? s.priceCombo : s.priceSolo); });
+  const dr = $("#drink"); dr.hidden = !(draft.combo && MIKOS.drinks?.length);
+  if (!dr.hidden) dr.innerHTML = `<p class="rule">Elige tu gaseosa (incluida en el combo)</p>` + MIKOS.drinks.map((d) => `<button type="button" role="radio" data-drink="${esc(d)}" aria-checked="${draft.drink === d}">${esc(d)}</button>`).join("");
   KEYS.forEach((g) => {
-    $$(`.card[data-g="${g}"]`).forEach((c) => {
-      const on = pick[g].includes(c.dataset.n);
-      c.classList.toggle("on", on);
-      c.setAttribute("aria-pressed", on);
-    });
-    $(`[data-cnt="${g}"]`).textContent = `${pick[g].length}/${limit(g)}`;
-    $(`[data-cnt="${g}"]`).classList.toggle("full", done(g));
+    const n = incl(g), have = draft.picks[g].length, ex = MK.ADDABLE.find((a) => a.g === g);
+    $$(`.card[data-g="${g}"]`).forEach((c) => { const on = draft.picks[g].includes(c.dataset.n); c.classList.toggle("on", on); c.setAttribute("aria-pressed", on); });
+    $(`[data-cnt="${g}"]`).textContent = `${have}/${n}`; $(`[data-cnt="${g}"]`).classList.toggle("full", have === n);
+    $(`[data-rule="${g}"]`).textContent = `Elige exactamente ${n} ${MK.lbl(g, n)} · incluid${n > 1 ? "as" : "a"} en el precio${ex ? ". Más en “extras” (se cobra aparte)." : "."}`;
   });
-  ADDABLE.forEach((a) => { const el = $(`[data-qty="${CSS.escape(a.key)}"]`); if (el) el.textContent = addons[a.key] || 0; });
-
-  const n = KEYS.filter(done).length;
-  $("#tsize").textContent = `${size.name} (${combo ? "Combo" : "Solo"}) · ${money(burritoPrice())}`;
-  const addonLines = Object.entries(addons).filter(([, q]) => q > 0).map(([k, q]) => {
-    const a = ADDABLE.find((x) => x.key === k);
-    return `<li class="ok"><span>+ ${a.n} x${q}</span><b>${money(a.price * q)}</b></li>`;
-  });
-  $("#tlines").innerHTML = KEYS.map((g) => `<li class="${done(g) ? "ok" : ""}"><span>${MIKOS.groups[g].title}</span><b>${pick[g].join(", ") || "Falta elegir " + limit(g)}</b></li>`).join("") + addonLines.join("");
-  $("#pbar").style.width = (n / KEYS.length) * 100 + "%";
-  $("#add").disabled = !ready();
-  $("#status").textContent = ready() ? "Burrito completo" : `Faltan ${KEYS.length - n} de ${KEYS.length} grupos`;
-  $$(".count").forEach((c) => (c.textContent = cart.length));
-
-  const total = cart.reduce((s, b) => s + (b.price || 0), 0);
-  $("#cart").innerHTML = cart.length ? cart.map((b, i) => {
-    const extraLines = Object.entries(b.addons || {}).filter(([, q]) => q > 0).map(([k, q]) => {
-      const a = ADDABLE.find((x) => x.key === k);
-      return `+ ${a ? a.n : k} x${q}`;
-    });
-    return `<li><div><strong>Burrito ${b.size} (${b.combo ? "Combo" : "Solo"}) · ${money(b.price)}</strong><p>${KEYS.map((g) => b[g].join(", ")).join(", ")}${extraLines.length ? " · " + extraLines.join(", ") : ""}</p></div><button type="button" class="x" data-del="${i}" aria-label="Quitar burrito ${i + 1}">Quitar</button></li>`;
-  }).join("") + `<li class="total"><span>Total</span><strong>${money(total)}</strong></li>`
-    : `<li class="empty">Aún no has agregado burritos. Arma el primero arriba.</li>`;
-  $("#form button[type=submit]").disabled = !cart.length;
-  localStorage.setItem("mikos-cart", JSON.stringify(cart));
+  MK.ADDABLE.forEach((a) => { const q = draft.addons[a.key] || 0; $(`[data-qty="${CSS.escape(a.key)}"]`).textContent = q; $(`[data-key="${CSS.escape(a.key)}"]`).classList.toggle("has-qty", q > 0); });
+  $("#ncount").textContent = `${draft.note.length}/${MIKOS.maxNote || 200}`;
+  $("#tsize").textContent = `${s.name} (${draft.combo ? "Combo" : "Solo"}) · ${money(p.unit)}`;
+  $("#tlines").innerHTML = KEYS.map((g) => `<li class="${bad.has(g) ? "" : "ok"}"><span>${esc(MIKOS.groups[g].title)}</span><b>${esc(draft.picks[g].join(", ")) || "Falta elegir " + incl(g)}</b></li>`).join("") + MK.addonList(draft).map((a) => `<li class="ok"><span>EXTRA</span><b>${esc(a.n)} x${a.q} · ${money(a.price)}</b></li>`).join("");
+  const done = KEYS.filter((g) => !bad.has(g)).length;
+  $("#pbar").style.width = (done / KEYS.length) * 100 + "%";
+  $("#status").textContent = errs.length ? `Faltan ${KEYS.length - done} de ${KEYS.length} grupos` : "Burrito completo";
+  $("#add").textContent = editing ? "Guardar cambios" : "Agregar al pedido";
+  $$(".count").forEach((c) => (c.textContent = MK.cart.count()));
+  const cur = view === "armar" ? (!errs.length ? 4 : KEYS.some((g) => draft.picks[g].length) ? 3 : 2) : { resumen: 5, datos: 6, enviar: 7 }[view];
+  $("#steps").innerHTML = STEPS.map((t, i) => `<li class="${i + 1 < cur ? "done" : i + 1 === cur ? "now" : ""}"><b>${i + 1}</b><span>${t}</span></li>`).join("");
 }
+
+function go(v, scroll = true) {
+  if (v !== "armar" && !MK.cart.lines.length) v = "armar";
+  view = v;
+  ["armar", "resumen", "datos", "enviar"].forEach((x) => ($(`#v-${x}`).hidden = x !== v));
+  $("#steps").hidden = false;
+  if (v !== "armar") { $$(".oid").forEach((e) => (e.textContent = MK.draftId.ensure())); }
+  if (v === "resumen") renderCart(); if (v === "enviar") renderSend();
+  paint();
+  if (scroll) $(v === "armar" ? "#armar" : "#pedido").scrollIntoView({ behavior: "smooth" });
+}
+
+const detail = (l) => { const p = MK.price(l); return `<strong>${esc(l.label)} · ${esc(MK.size(l.size).name)} · ${l.combo ? "Combo" : "Solo"}</strong><p>${KEYS.map((g) => `<b>${esc(MIKOS.groups[g].title)}:</b> ${esc(l.picks[g].join(", "))}`).join("<br>")}${MK.addonList(l).length ? "<br><b>Extras:</b> " + esc(MK.addonList(l).map((a) => `${a.n} x${a.q}`).join(", ")) : ""}${l.combo ? "<br><b>Bebida:</b> " + esc(l.drink || "Gaseosa") : ""}${l.note ? "<br><b>Observaciones:</b> " + esc(l.note) : ""}</p>`; };
+function labelled() { let n = 0; return MK.cart.lines.map((l) => { const a = n + 1; n += l.qty; const t = (k) => String(k).padStart(2, "0"); return { ...l, label: `BURRITO ${t(a)}${l.qty > 1 ? "-" + t(n) : ""}` }; }); }
+function totalsHtml() { const t = MK.totals(MK.cart.lines); return `<div><span>SUBTOTAL</span><b>${money(t.base)}</b></div>${t.extras ? `<div><span>EXTRAS</span><b>${money(t.extras)}</b></div>` : ""}<div><span>DOMICILIO</span><b>${t.delivery == null ? "Por confirmar" : money(t.delivery)}</b></div><div class="tt"><span>TOTAL</span><b>${money(t.total)}</b></div>`; }
+
+function renderCart() {
+  $("#cart").innerHTML = labelled().map((l) => `<li data-id="${l.id}"><div>${detail(l)}<span class="lp">${money(MK.price(l).unit)}${l.qty > 1 ? ` c/u · ${money(MK.price(l).total)}` : ""}</span></div><div class="rowbtn"><span class="stepper q"><button type="button" data-q="-1" aria-label="Menos">−</button><b>${l.qty}</b><button type="button" data-q="1" aria-label="Más">+</button></span><button type="button" class="x" data-edit>Editar</button><button type="button" class="x" data-del>Quitar</button></div></li>`).join("");
+  $("#totals").innerHTML = totalsHtml();
+}
+function renderSend() {
+  const id = MK.draftId.ensure(); order = MK.buildOrder(id, MK.cart.lines, cust);
+  $("#recap").innerHTML = `<ul>${order.items.map((i) => `<li><strong>${esc(i.label)}</strong> · ${esc(i.size)} · ${i.combo ? "Combo" : "Solo"} <b>${money(i.total)}</b></li>`).join("")}</ul><div class="totals">${totalsHtml()}</div><p class="who">${esc(cust.nombre)} · ${esc(MK.digits(cust.tel))}<br>${esc(cust.dir)}, ${esc(cust.barrio)}${cust.ref ? " (" + esc(cust.ref) + ")" : ""}<br>Pago: ${esc(cust.pago)}${MK.isCash(cust.pago) ? " · paga con " + money(+MK.digits(cust.pagaCon)) : ""}</p>`;
+  $("#wa").href = MK.waUrl(order); $("#fresh").hidden = !sent;
+}
+function toast(msg, undoFn) { const t = $("#toast"); t.hidden = false; t.innerHTML = esc(msg) + (undoFn ? ` <button type="button">Deshacer</button>` : ""); t.onclick = (e) => { if (e.target.tagName === "BUTTON") { undoFn(); t.hidden = true; } }; clearTimeout(toast.t); toast.t = setTimeout(() => (t.hidden = true), 6000); }
+const invalidate = () => { if (sent) { sent = false; } MK.draftId.reset(); };
 
 document.addEventListener("click", (e) => {
-  const sizeBtn = e.target.closest("#sizes button");
-  if (sizeBtn) { selectSize(sizeBtn.dataset.size); return; }
-
-  const comboBtn = e.target.closest("#combo button");
-  if (comboBtn) { combo = comboBtn.dataset.combo === "1"; paintCombo(); paint(); return; }
-
-  const card = e.target.closest(".card");
-  if (card) {
-    const g = card.dataset.g, n = card.dataset.n;
-    const i = pick[g].indexOf(n);
-    if (i > -1) pick[g].splice(i, 1);
-    else if (pick[g].length < limit(g)) pick[g].push(n);
-    paint();
-    return;
+  const t = e.target, q = (s) => t.closest(s);
+  if (q("[data-go]")) return go(q("[data-go]").dataset.go);
+  if (q("#sizes button")) { draft.size = q("#sizes button").dataset.size; KEYS.forEach((g) => (draft.picks[g] = draft.picks[g].slice(0, incl(g)))); return paint(); }
+  if (q("#combo button[data-combo]")) { draft.combo = q("#combo button[data-combo]").dataset.combo === "1"; if (!draft.combo) draft.drink = null; return paint(); }
+  if (q("[data-drink]")) { draft.drink = q("[data-drink]").dataset.drink; return paint(); }
+  const card = q(".card");
+  if (card) { const g = card.dataset.g, n = card.dataset.n, a = draft.picks[g], i = a.indexOf(n); if (i > -1) a.splice(i, 1); else if (a.length < incl(g)) a.push(n); else { toast(`Ya elegiste ${incl(g)} ${MK.lbl(g, incl(g))}. Quita una para cambiar, o agrégala como extra.`); } $("#errs").textContent = ""; return paint(); }
+  const st = q(".addon .inc, .addon .dec");
+  if (st) { const k = st.closest(".addon").dataset.key, c = draft.addons[k] || 0; draft.addons[k] = st.classList.contains("inc") ? c + 1 : Math.max(0, c - 1); if (!draft.addons[k]) delete draft.addons[k]; return paint(); }
+  if (t.id === "add") {
+    const errs = MK.checkLine(draft);
+    if (errs.length) { $("#errs").innerHTML = errs.map((x) => esc(x.msg)).join("<br>"); const g = $(`[data-grp="${errs[0].g}"]`); g?.scrollIntoView({ behavior: "smooth" }); g?.classList.add("shake"); setTimeout(() => g?.classList.remove("shake"), 400); return; }
+    invalidate(); MK.cart.upsert(draft, editing); editing = null; draft = MK.blank(); $("#note").value = ""; $("#errs").textContent = ""; return go("resumen");
   }
-
-  const stepBtn = e.target.closest(".addon .inc, .addon .dec");
-  if (stepBtn) {
-    const key = stepBtn.closest(".addon").dataset.key;
-    const cur = addons[key] || 0;
-    if (stepBtn.classList.contains("inc")) addons[key] = cur + 1;
-    else if (cur > 0) addons[key] = cur - 1;
-    if (!addons[key]) delete addons[key];
-    paint();
-    return;
+  if (t.id === "another") { editing = null; draft = MK.blank(); $("#note").value = ""; return go("armar"); }
+  if (t.id === "toDatos") return go("datos");
+  const li = q("#cart li");
+  if (li) {
+    const id = li.dataset.id;
+    if (q("[data-q]")) { const l = MK.cart.lines.find((x) => x.id === id); MK.cart.setQty(id, l.qty + +q("[data-q]").dataset.q); invalidate(); return go("resumen", false); }
+    if (q("[data-edit]")) { draft = MK.clone(MK.cart.lines.find((x) => x.id === id)); editing = id; $("#note").value = draft.note; return go("armar"); }
+    if (q("[data-del]")) { const r = MK.cart.remove(id); invalidate(); toast("Quitaste un burrito del pedido.", () => { MK.cart.restore(r); invalidate(); go("resumen", false); }); return go("resumen", false); }
   }
-
-  if (e.target.id === "add" && ready()) {
-    cart.push({ size: size.name, combo, price: burritoPrice(), addons: { ...addons }, ...JSON.parse(JSON.stringify(pick)) });
-    KEYS.forEach((g) => (pick[g] = []));
-    addons = {};
-    paint();
-    $("#pedido").scrollIntoView({ behavior: "smooth" });
-    return;
-  }
-
-  const del = e.target.closest("[data-del]");
-  if (del) { cart.splice(+del.dataset.del, 1); paint(); }
+  if (t.id === "wa" || q("#wa")) { sent = true; MK.orders.save(order); $("#fresh").hidden = false; return; }
+  if (t.id === "copy") { navigator.clipboard?.writeText(MK.whatsapp(order)).then(() => toast("Pedido copiado. Pégalo en el chat de MIKOS.")); return; }
+  if (t.id === "fresh") { MK.cart.clear(); MK.draftId.reset(); sent = false; draft = MK.blank(); return go("armar"); }
 });
-
+document.addEventListener("input", (e) => {
+  if (e.target.id === "note") { draft.note = e.target.value; $("#ncount").textContent = `${draft.note.length}/${MIKOS.maxNote || 200}`; }
+  if (e.target.name === "pago") $("#cashbox").hidden = !MK.isCash(e.target.value);
+  if (e.target.name === "pago" || e.target.name === "pagaCon") chips();
+});
+function chips() { const tot = MK.totals(MK.cart.lines).total, f = $("#form"); const opts = [tot, 20000, 50000, 100000].filter((v, i) => i === 0 || v >= tot); $("#chips").innerHTML = [...new Set(opts)].map((v, i) => `<button type="button" data-cash="${v}">${i === 0 && v === tot ? "Exacto " : ""}${money(v)}</button>`).join(""); }
+document.addEventListener("click", (e) => { const c = e.target.closest("[data-cash]"); if (c) { $("#form [name=pagaCon]").value = money(+c.dataset.cash); } });
 document.addEventListener("submit", (e) => {
-  if (e.target.id !== "form") return;
-  e.preventDefault();
-  const f = new FormData(e.target);
-  const total = cart.reduce((s, b) => s + (b.price || 0), 0);
-  const lines = cart.map((b, i) => {
-    const extraLines = Object.entries(b.addons || {}).filter(([, q]) => q > 0).map(([k, q]) => {
-      const a = ADDABLE.find((x) => x.key === k);
-      return `   + ${a ? a.n : k} x${q} (${money((a ? a.price : 0) * q)})`;
-    });
-    return `${i + 1}) Burrito ${b.size} (${b.combo ? "Combo: papas + gaseosa" : "Solo"}) - ${money(b.price)}\n` +
-      KEYS.map((g) => `   ${MIKOS.groups[g].title}: ${b[g].join(", ")}`).join("\n") +
-      (extraLines.length ? "\n" + extraLines.join("\n") : "");
-  });
-  const msg = `Hola MIKOS, quiero hacer un pedido a domicilio.\n\n${lines.join("\n\n")}\n\nTotal: ${money(total)}\n\nNombre: ${f.get("nombre")}\nDirección: ${f.get("dir")}\nPago: ${f.get("pago")}` + (f.get("notas") ? `\nNotas: ${f.get("notas")}` : "");
-  const url = `https://wa.me/${MIKOS.whatsapp}?text=${encodeURIComponent(msg)}`;
-  const a = document.createElement("a");
-  a.href = url; a.target = "_blank"; a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  if (e.target.id !== "form") return; e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target)), tot = MK.totals(MK.cart.lines).total, errs = MK.checkCustomer(f, tot);
+  $$("#form .fe").forEach((s) => (s.textContent = "")); Object.entries(errs).forEach(([k, m]) => { const el = $(`#form [name="${k}"]`); if (el) el.closest("label").querySelector(".fe").textContent = m; });
+  if (Object.keys(errs).length) { $(`#form [name="${Object.keys(errs)[0]}"]`).focus(); return; }
+  cust = { ...f, tel: MK.digits(f.tel), pagaCon: MK.isCash(f.pago) ? String(+MK.digits(f.pagaCon)) : "" };
+  try { localStorage.setItem("mikos-customer", JSON.stringify({ ...cust, pagaCon: "" })); } catch (x) {}
+  go("enviar");
 });
-
-build();
+build(); chips();
+if (MK.cart.lines.length) paint();

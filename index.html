@@ -4,22 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MIKOS, territorio del sabor</title>
-<meta name="description" content="Carta virtual de burritos MIKOS. Arma tu burrito y pídelo a domicilio por WhatsApp.">
+<meta name="description" content="Carta virtual MIKOS: burritos y chicken tenders a domicilio.">
 <meta name="theme-color" content="#800100">
-<link rel="stylesheet" href="css/styles.css?v=3">
+<link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body>
 <header class="top">
   <a href="#inicio" class="brand"><img src="img/logo-wordmark.png" alt="MIKOS" height="30"></a>
-  <nav><a href="#armar">Armar</a><a href="#pedido">Pedido</a></nav>
-  <a class="btn sm" href="#pedido">Mi pedido <b class="count">0</b></a>
+  <nav class="top-nav"><a href="#armar">Burritos</a><a href="#tenders">Tenders</a></nav>
+  <button class="btn sm" data-go="resumen">Mi pedido <b class="count">0</b></button>
 </header>
+<nav class="category-sidebar" aria-label="Categorías del menú">
+  <a href="#armar" class="category-link"><span>Burritos</span></a>
+  <a href="#tenders" class="category-link"><span>Tenders</span></a>
+</nav>
 <main id="inicio">
   <section class="hero">
     <div class="copy">
       <h1><span class="ln">Territorio</span><span class="ln">del sabor</span></h1>
-      <p>Burritos armados a tu manera: proteína, vegetal y toppings, en tamaño Mediano o XL. Pídelos a domicilio y confírmalos directo por WhatsApp.</p>
-      <a class="btn" href="#armar">Arma tu burrito</a>
+      <p class="kick">Arma tu burrito como quieras</p>
+      <p>Elige tamaño, proteína, vegetal, toppings y salsas. Revisa tu pedido y envíalo por WhatsApp.</p>
+      <a class="btn" href="#armar">Armar pedido</a>
+      <ul class="info" id="info"></ul>
     </div>
     <div class="art">
       <img class="mono" src="img/logo-mikos.png" alt="MIKOS, mono con gafas y la lengua afuera">
@@ -29,6 +35,8 @@
   <div class="marquee" aria-hidden="true"><div id="marquee"></div></div>
   <section id="armar" class="wrap">
     <h2>Arma tu burrito</h2>
+    <ol id="steps" class="steps" aria-label="Progreso del pedido"></ol>
+    <div id="v-armar">
     <p id="promo" class="promo" role="status"></p>
     <div class="layout">
       <div class="build">
@@ -39,34 +47,138 @@
         </div>
         <div id="groups"></div>
         <div id="extras"></div>
+        <div class="group"><div class="ghead"><span class="step" id="nstep"></span><h3>¿ALGUNA INDICACIÓN ESPECIAL?</h3><span class="cnt-label" id="ncount"></span></div><textarea id="note" rows="2" placeholder="Ej: Sin cebolla."></textarea></div>
       </div>
       <aside class="ticket" aria-label="Tu burrito">
         <h3>Tu burrito <span id="tsize"></span></h3>
         <ul id="tlines"></ul>
         <div class="prog"><i id="pbar"></i></div>
         <p id="status" role="status"></p>
-        <button class="btn" id="add" disabled>Agregar al pedido</button>
-        <a class="go" href="#pedido">Ver pedido (<b class="count">0</b>)</a>
+        <p id="errs" class="errs" role="alert"></p>
+        <button class="btn" id="add">Agregar al pedido</button>
+        <button type="button" class="go" data-go="resumen">Ver pedido (<b class="count">0</b>)</button>
+      </aside>
+    </div>
+    </div>
+  </section>
+  <section id="tenders" class="wrap tenders-section">
+    <div class="tenders-intro">
+      <p class="promo-label">NUEVO EN MIKOS</p>
+      <h2>Chicken Tenders</h2>
+      <p>Pollo crujiente, papas a la francesa y tus salsas favoritas. Cada presentación incluye 2 salsas pequeñas.</p>
+    </div>
+    <div class="tenders-visuals" aria-label="Chicken tenders y salsas disponibles">
+      <figure class="tenders-hero-image">
+        <img src="img/items/pollo-tender.jpg" alt="Chicken tenders dorados y crujientes" loading="lazy">
+        <figcaption><strong>CRUJIENTES POR FUERA.</strong><span>IRRESISTIBLES POR DENTRO.</span></figcaption>
+      </figure>
+      <div class="sauce-gallery">
+        <h3>ELIGE TU SALSA</h3>
+        <div class="sauce-photo-grid">
+          <figure><img src="img/items/salsa-miel-picante.jpg" alt="Salsa de miel picante" loading="lazy"><figcaption>Miel picante</figcaption></figure>
+          <figure><img src="img/items/salsa-de-mostaza-y-miel.jpg" alt="Salsa de miel mostaza" loading="lazy"><figcaption>Miel mostaza</figcaption></figure>
+          <figure><img src="img/items/salsa-aceitunas.jpg" alt="Salsa de aceitunas" loading="lazy"><figcaption>Aceitunas</figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="tender-layout">
+      <div class="tender-options">
+        <label class="tender-field" for="tenderPack">Elige tu presentación
+          <select id="tenderPack">
+            <option value="5">Tenders X5 — $22.000 (1 porción de papas)</option>
+            <option value="10">Tenders X10 — $32.000 (1 porción de papas)</option>
+            <option value="15">Tenders X15 — $45.000 (2 porciones de papas)</option>
+            <option value="20">Tenders X20 — $55.000 (3 porciones de papas)</option>
+          </select>
+        </label>
+        <label class="tender-field" for="tenderQty">Cantidad de combos
+          <input id="tenderQty" type="number" min="1" max="10" value="1" inputmode="numeric">
+        </label>
+        <div class="tender-included"><strong>Papas incluidas:</strong> <span id="tenderFries">1 porción de papas a la francesa</span><br><strong>Además:</strong> 2 salsas pequeñas por cada combo.</div>
+        <div class="tender-sauces">
+          <label class="tender-field" for="tenderSauce1">Salsa pequeña 1
+            <select id="tenderSauce1"><option>Miel picante</option><option>Miel mostaza</option><option>Aceitunas</option></select>
+          </label>
+          <label class="tender-field" for="tenderSauce2">Salsa pequeña 2
+            <select id="tenderSauce2"><option>Miel mostaza</option><option>Miel picante</option><option>Aceitunas</option></select>
+          </label>
+        </div>
+        <div class="tender-extra">
+          <label class="tender-field" for="tenderExtraQty">Vasos adicionales de salsa (9 oz) — $5.000 c/u
+            <input id="tenderExtraQty" type="number" min="0" max="10" value="0" inputmode="numeric">
+          </label>
+          <label class="tender-field" for="tenderExtraSauce">Salsa adicional
+            <select id="tenderExtraSauce"><option>Miel picante</option><option>Miel mostaza</option><option>Aceitunas</option></select>
+          </label>
+        </div>
+      </div>
+      <aside class="tender-ticket">
+        <p class="tender-eyebrow">TU PEDIDO</p>
+        <p id="tenderSummary">Chicken Tenders x5 · 1 combo</p>
+        <p class="tender-total" id="tenderTotal">$22.000</p>
+        <button type="button" class="btn" id="tenderWhatsApp">Continuar con mis datos</button>
+        <form id="tenderCustomerForm" class="tender-customer-form" hidden novalidate>
+          <h3>Antes de enviar tu pedido</h3>
+          <p>Completa tus datos para que podamos preparar y entregar tu pedido correctamente.</p>
+          <label class="tender-field" for="tenderCustomerName">Nombre completo
+            <input id="tenderCustomerName" name="name" autocomplete="name" required maxlength="100" placeholder="¿A nombre de quién va el pedido?">
+          </label>
+          <label class="tender-field" for="tenderCustomerAddress">Dirección y barrio
+            <input id="tenderCustomerAddress" name="address" autocomplete="street-address" required maxlength="180" placeholder="Dirección, barrio y referencias">
+          </label>
+          <label class="tender-field" for="tenderPaymentMethod">Método de pago
+            <select id="tenderPaymentMethod" name="payment" required>
+              <option value="">Selecciona cómo vas a pagar</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+            </select>
+          </label>
+          <label class="tender-field" id="tenderCashField" for="tenderCashAmount">¿Con cuánto pagas? (para calcular las vueltas)
+            <input id="tenderCashAmount" name="cashAmount" type="number" min="1" step="1000" inputmode="numeric" placeholder="Ej. 50000">
+          </label>
+          <p id="tenderFormError" class="tender-form-error" role="alert" hidden></p>
+          <button type="submit" class="btn" id="tenderSendWhatsApp">Confirmar y enviar por WhatsApp</button>
+        </form>
+        <small>El domicilio se confirma por WhatsApp y no está incluido en este total.</small>
       </aside>
     </div>
   </section>
   <div class="hz"></div>
   <section id="pedido" class="wrap">
-    <h2>Tu pedido</h2>
-    <div class="order">
-      <ul id="cart" class="receipt"></ul>
-      <form id="form" class="form">
-        <label>Nombre<input name="nombre" required autocomplete="name"></label>
-        <label>Dirección de entrega<input name="dir" required autocomplete="street-address"></label>
-        <label>Forma de pago<select name="pago" id="pago"></select></label>
-        <label>Notas para la cocina<textarea name="notas" rows="2" placeholder="Sin picante, sin salsas, etc."></textarea></label>
-        <button class="btn wa" type="submit">Enviar pedido por WhatsApp</button>
+    <div id="v-resumen" hidden>
+      <h2>Tu pedido</h2><p class="code">PEDIDO <b class="oid"></b></p>
+      <ul id="cart" class="receipt"></ul><div id="totals" class="totals"></div>
+      <div class="actions"><button type="button" class="btn alt" id="another">Agregar otro</button><button type="button" class="btn" id="toDatos">Continuar</button></div>
+    </div>
+    <div id="v-datos" hidden>
+      <h2>Tus datos</h2><p class="code">PEDIDO <b class="oid"></b> · Solo domicilios</p>
+      <form id="form" class="form" novalidate>
+        <label>Nombre<input name="nombre" autocomplete="name"><small class="fe"></small></label>
+        <label>Teléfono<input name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="300 123 4567"><small class="fe"></small></label>
+        <label>Dirección<input name="dir" autocomplete="street-address"><small class="fe"></small></label>
+        <label>Barrio / Vereda<input name="barrio"><small class="fe"></small></label>
+        <label>Referencia del domicilio (opcional)<input name="ref" placeholder="Ej: casa blanca, portón negro"><small class="fe"></small></label>
+        <label>Método de pago<select name="pago" id="pago"></select><small class="fe"></small></label>
+        <label id="cashbox" hidden>¿Con cuánto vas a pagar?<input name="pagaCon" inputmode="numeric" placeholder="$50.000"><span id="chips" class="chips2"></span><small class="fe"></small></label>
+        <label>Nota para todo el pedido (opcional)<textarea name="notas" rows="2" maxlength="200"></textarea></label>
+        <div class="actions"><button type="button" class="btn alt" data-go="resumen">Editar pedido</button><button class="btn" type="submit">Revisar y enviar</button></div>
       </form>
+    </div>
+    <div id="v-enviar" hidden>
+      <h2>Tu pedido está listo para enviar.</h2>
+      <p class="code big">PEDIDO <b class="oid"></b></p><p class="pill">Pendiente de confirmación</p>
+      <div id="recap" class="receipt"></div>
+      <p class="explain">Al enviar este pedido por WhatsApp, nuestro equipo lo revisará y te confirmará. Tu pedido <b>no está confirmado</b> hasta que MIKOS te responda.</p>
+      <div class="actions"><a class="btn wa" id="wa" target="_blank" rel="noopener">Enviar pedido por WhatsApp</a><button type="button" class="btn alt" id="copy">Copiar pedido</button><button type="button" class="btn alt" data-go="resumen">Editar pedido</button><button type="button" class="btn alt" id="fresh" hidden>Hacer otro pedido</button></div>
     </div>
   </section>
 </main>
+<div id="toast" class="toast" role="status" hidden></div>
 <footer><img src="img/logo-mikos.png" alt="" height="80"><p id="foot"></p></footer>
-<script src="js/config.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
+<script src="js/config.js?v=4"></script>
+<script src="js/core.js?v=4"></script>
+<script src="js/order.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
+<script src="js/tenders.js?v=2"></script>
 </body>
 </html>

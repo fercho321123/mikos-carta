@@ -1,9 +1,18 @@
-# MIKOS - Carta virtual
+# MIKOS - Carta virtual (sistema de pedidos por WhatsApp)
 
-1. Abre js/config.js y cambia `whatsapp` por tu número (573XXXXXXXXX). Ahí también editas precios y productos.
-2. Fotos reales: guárdalas en img/items/ en .jpg con estos nombres:
-   carne-de-res, carne-de-cerdo, pollo-salsa, pollo-tender, lechuga, pepinillos-salteados, pico-de-gallo,
-   jalapenos, cebolla-encurtida, maiz, huevo, nachos, guacamoles, platano, chorizo, chicharron, tocineta
-   Mientras no existan, cada tarjeta muestra un bloque rojo con la inicial.
-3. Tipografía Aton Bold: pon el archivo Aton-Bold.woff2 en fonts/ (se usa Anton como reemplazo hasta entonces).
-4. Publica la carpeta completa en Netlify, Vercel, GitHub Pages o cualquier hosting.
+Sitio estático (HTML + CSS + JS, sin build). Publica la carpeta en Netlify, Vercel, GitHub Pages, etc.
+
+## Archivos
+- `js/config.js`  Datos del negocio: WhatsApp, tamaños, precios, reglas, ingredientes, extras, pagos.
+- `js/core.js`    Catálogo derivado, precios, validaciones y carrito (cada burrito es una línea independiente).
+- `js/order.js`   Código único de pedido, estados, historial local y mensaje de WhatsApp.
+- `js/app.js`     Interfaz y flujo (Armar → Resumen → Datos → Enviar).
+
+## Datos que aún puedes completar en config.js
+`schedule` (horario), `delivery.fee` (valor del domicilio; null = "por confirmar"), `drinks` (lista de gaseosas del combo),
+`pagos` (ej. agregar "Nequi", "Daviplata"; "Efectivo" activa el campo "¿Con cuánto vas a pagar?").
+
+## Código de pedido
+`MKS-` + 6 caracteres derivados de la hora (segundos desde 2026-01-01). No se repite en un mismo celular.
+Sin backend no se puede garantizar unicidad global; para eso, reemplaza `MK.newId()` por una llamada a tu servidor.
+Estados preparados: `MK.STATUS` (NUEVO, CONFIRMADO, EN_PREPARACION, LISTO, DESPACHADO, ENTREGADO, CANCELADO).
