@@ -6,21 +6,28 @@
 <title>MIKOS, territorio del sabor</title>
 <meta name="description" content="Carta virtual de burritos MIKOS. Arma tu burrito y pídelo a domicilio por WhatsApp.">
 <meta name="theme-color" content="#800100">
-<link rel="stylesheet" href="css/styles.css?v=4">
+<link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body>
 <header class="top">
   <a href="#inicio" class="brand"><img src="img/logo-wordmark.png" alt="MIKOS" height="30"></a>
-  <nav><a href="#armar">Armar</a><a href="#tenders">Tenders</a></nav>
+  <nav><a href="#armar" data-product="armar">Armar</a><a href="#tenders" data-product="tenders">Tenders</a></nav>
   <button class="btn sm" data-go="resumen">Mi pedido <b class="count">0</b></button>
 </header>
+<button type="button" id="menuToggle" class="side-menu-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menuPanel">Menú</button>
+<div id="menuVeil" class="menu-veil" hidden></div>
+<nav id="menuPanel" class="menu-panel" hidden aria-label="Elige qué vas a pedir">
+  <div class="menu-head"><span>¿Qué vas a pedir?</span><button type="button" id="menuClose" aria-label="Cerrar menú">✕</button></div>
+  <button type="button" class="menu-opt" data-product="armar"><span class="mo-n">Burritos</span><span class="mo-d">Arma el tuyo a tu gusto</span></button>
+  <button type="button" class="menu-opt" data-product="tenders"><span class="mo-n">Tenders</span><span class="mo-d">Paquetes con papas y salsas incluidas</span></button>
+</nav>
 <main id="inicio">
   <section class="hero">
     <div class="copy">
       <h1><span class="ln">Territorio</span><span class="ln">del sabor</span></h1>
       <p class="kick">Arma tu burrito como quieras</p>
       <p>Elige tamaño, proteína, vegetal, toppings y salsas. Revisa tu pedido y envíalo por WhatsApp.</p>
-      <a class="btn" href="#armar">Armar pedido</a>
+      <a class="btn" href="#armar" data-product="armar">Armar pedido</a>
       <ul class="info" id="info"></ul>
     </div>
     <div class="art">
@@ -58,7 +65,7 @@
     </div>
   </section>
   <div class="hz"></div>
-  <section id="tenders" class="wrap">
+  <section id="tenders" class="wrap" hidden>
     <h2>Chicken tenders</h2>
     <p class="rule">Tenders de pollo crocantes con papas a la francesa. Cada paquete incluye 2 salsas a elegir.</p>
     <div class="layout">
@@ -119,9 +126,9 @@
 </main>
 <div id="toast" class="toast" role="status" hidden></div>
 <footer><img src="img/logo-mikos.png" alt="" height="80"><p id="foot"></p></footer>
-<script src="js/config.js?v=4"></script>
-<script src="js/core.js?v=4"></script>
-<script src="js/order.js?v=4"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/config.js?v=5"></script>
+<script src="js/core.js?v=5"></script>
+<script src="js/order.js?v=5"></script>
+<script src="js/app.js?v=5"></script>
 </body>
 </html>
