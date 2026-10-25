@@ -17,16 +17,34 @@ MK.KEYS.forEach((g) => MIKOS.groups[g].items.forEach((it) => {
 
 MK.size = (id) => MIKOS.sizes.find((s) => s.id === id) || MIKOS.sizes[0];
 MK.limit = (l, g) => MK.size(l.size).rules[g];
-MK.blank = () => ({ size: MIKOS.sizes[0].id, combo: false, drink: null, qty: 1, note: "", picks: Object.fromEntries(MK.KEYS.map((k) => [k, []])), addons: {} });
+MK.blank = () => ({ kind: "burrito", size: MIKOS.sizes[0].id, combo: false, drink: null, qty: 1, note: "", picks: Object.fromEntries(MK.KEYS.map((k) => [k, []])), addons: {} });
 MK.clone = (o) => JSON.parse(JSON.stringify(o));
 MK.addonList = (l) => Object.entries(l.addons).filter(([, q]) => q > 0).map(([k, q]) => { const a = MK.ADDABLE.find((x) => x.key === k); return a ? { n: a.n, g: a.g, q, price: a.price * q } : null; }).filter(Boolean);
 
+// Chicken tenders: paquetes de precio fijo (no se arman por grupos). Incluyen 2 salsas; el vaso de salsa extra se cobra aparte.
+MK.tenders = {
+  pkg: (id) => MIKOS.tenders.packages.find((p) => p.id === id) || MIKOS.tenders.packages[0],
+  blank: () => ({ kind: "tenders", pkg: MIKOS.tenders.packages[0].id, sauces: [], cups: {}, qty: 1, note: "" }),
+  cupList: (l) => Object.entries(l.cups || {}).filter(([, q]) => q > 0).map(([n, q]) => ({ n, q, price: (MIKOS.tenders.sauceCupPrice || 0) * q })),
+  price(l) {
+    const p = this.pkg(l.pkg), extras = this.cupList(l).reduce((t, c) => t + c.price, 0);
+    return { base: p.price, extras, unit: p.price + extras, total: (p.price + extras) * l.qty };
+  },
+  check(l) {
+    const e = [];
+    if (l.sauces.length !== 2) e.push({ g: "sauces", msg: `Elige 2 salsas incluidas para continuar${l.sauces.length ? ` (llevas ${l.sauces.length})` : ""}.` });
+    if ((l.note || "").length > (MIKOS.maxNote || 200)) e.push({ g: "note", msg: `Las indicaciones son muy largas (máx. ${MIKOS.maxNote || 200} caracteres).` });
+    return e;
+  }
+};
+
 // Precios: se calculan SIEMPRE desde la config (nada de precios guardados que queden viejos)
-MK.price = (l) => {
+MK.priceBurrito = (l) => {
   const s = MK.size(l.size), base = l.combo ? s.priceCombo : s.priceSolo;
   const extras = MK.addonList(l).reduce((t, a) => t + a.price, 0);
   return { base, extras, unit: base + extras, total: (base + extras) * l.qty };
 };
+MK.price = (l) => (l.kind === "tenders" ? MK.tenders.price(l) : MK.priceBurrito(l));
 MK.totals = (lines) => {
   const t = lines.reduce((a, l) => { const p = MK.price(l); a.base += p.base * l.qty; a.extras += p.extras * l.qty; return a; }, { base: 0, extras: 0 });
   const fee = MIKOS.delivery?.fee ?? null;
@@ -34,13 +52,14 @@ MK.totals = (lines) => {
 };
 
 // Validaciones: mensajes en lenguaje de cliente
-MK.checkLine = (l) => {
+MK.checkLineBurrito = (l) => {
   const e = [];
   MK.KEYS.forEach((g) => { const n = MK.limit(l, g), have = l.picks[g].length; if (have !== n) e.push({ g, msg: `Selecciona ${n} ${MK.lbl(g, n)} para continuar${have ? ` (llevas ${have})` : ""}.` }); });
   if (l.combo && MIKOS.drinks?.length && !l.drink) e.push({ g: "drink", msg: "Elige la gaseosa de tu combo." });
   if ((l.note || "").length > (MIKOS.maxNote || 200)) e.push({ g: "note", msg: `Las indicaciones son muy largas (máx. ${MIKOS.maxNote || 200} caracteres).` });
   return e;
 };
+MK.checkLine = (l) => (l.kind === "tenders" ? MK.tenders.check(l) : MK.checkLineBurrito(l));
 MK.isCash = (m) => MK.slug(m || "") === "efectivo";
 MK.digits = (s) => String(s || "").replace(/\D/g, "").replace(/^57(?=3\d{9}$)/, "");
 MK.checkCustomer = (c, total) => {
@@ -57,7 +76,7 @@ MK.checkCustomer = (c, total) => {
 // Carrito: cada línea es independiente y lleva sus propias selecciones
 MK.cart = {
   lines: [], KEY: "mikos-cart-v2",
-  load() { try { const d = JSON.parse(localStorage.getItem(this.KEY)); this.lines = (d || []).filter((l) => l.id && l.picks && MK.KEYS.every((g) => Array.isArray(l.picks[g]))); } catch (e) { this.lines = []; } },
+  load() { try { const d = JSON.parse(localStorage.getItem(this.KEY)); this.lines = (d || []).filter((l) => l.id && (l.kind === "tenders" ? Array.isArray(l.sauces) : l.picks && MK.KEYS.every((g) => Array.isArray(l.picks[g])))); } catch (e) { this.lines = []; } },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.lines)); } catch (e) {} },
   upsert(l, id) { const line = { ...MK.clone(l), id: id || "L" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) }; const i = this.lines.findIndex((x) => x.id === id); i > -1 ? (this.lines[i] = line) : this.lines.push(line); this.save(); return line; },
   remove(id) { const i = this.lines.findIndex((l) => l.id === id); if (i < 0) return null; const [l] = this.lines.splice(i, 1); this.save(); return { l, i }; },

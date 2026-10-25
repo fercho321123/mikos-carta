@@ -4,20 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MIKOS, territorio del sabor</title>
-<meta name="description" content="Carta virtual MIKOS: burritos y chicken tenders a domicilio.">
+<meta name="description" content="Carta virtual de burritos MIKOS. Arma tu burrito y pídelo a domicilio por WhatsApp.">
 <meta name="theme-color" content="#800100">
 <link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body>
 <header class="top">
   <a href="#inicio" class="brand"><img src="img/logo-wordmark.png" alt="MIKOS" height="30"></a>
-  <nav class="top-nav"><a href="#armar">Burritos</a><a href="#tenders">Tenders</a></nav>
+  <nav><a href="#armar">Armar</a><a href="#tenders">Tenders</a></nav>
   <button class="btn sm" data-go="resumen">Mi pedido <b class="count">0</b></button>
 </header>
-<nav class="category-sidebar" aria-label="Categorías del menú">
-  <a href="#armar" class="category-link"><span>Burritos</span></a>
-  <a href="#tenders" class="category-link"><span>Tenders</span></a>
-</nav>
 <main id="inicio">
   <section class="hero">
     <div class="copy">
@@ -61,85 +57,33 @@
     </div>
     </div>
   </section>
-  <section id="tenders" class="wrap tenders-section">
-    <div class="tenders-intro">
-      <p class="promo-label">NUEVO EN MIKOS</p>
-      <h2>Chicken Tenders</h2>
-      <p>Pollo crujiente, papas a la francesa y tus salsas favoritas. Cada presentación incluye 2 salsas pequeñas.</p>
-    </div>
-    <div class="tenders-visuals" aria-label="Chicken tenders y salsas disponibles">
-      <figure class="tenders-hero-image">
-        <img src="img/items/pollo-tender.jpg" alt="Chicken tenders dorados y crujientes" loading="lazy">
-        <figcaption><strong>CRUJIENTES POR FUERA.</strong><span>IRRESISTIBLES POR DENTRO.</span></figcaption>
-      </figure>
-      <div class="sauce-gallery">
-        <h3>ELIGE TU SALSA</h3>
-        <div class="sauce-photo-grid">
-          <figure><img src="img/items/salsa-miel-picante.jpg" alt="Salsa de miel picante" loading="lazy"><figcaption>Miel picante</figcaption></figure>
-          <figure><img src="img/items/salsa-de-mostaza-y-miel.jpg" alt="Salsa de miel mostaza" loading="lazy"><figcaption>Miel mostaza</figcaption></figure>
-          <figure><img src="img/items/salsa-aceitunas.jpg" alt="Salsa de aceitunas" loading="lazy"><figcaption>Aceitunas</figcaption></figure>
+  <div class="hz"></div>
+  <section id="tenders" class="wrap">
+    <h2>Chicken tenders</h2>
+    <p class="rule">Tenders de pollo crocantes con papas a la francesa. Cada paquete incluye 2 salsas a elegir.</p>
+    <div class="layout">
+      <div class="build">
+        <div class="group">
+          <div class="ghead"><span class="step">1</span><h3>Paquete</h3></div>
+          <div id="tpkgs" class="sizes" role="radiogroup" aria-label="Paquete de tenders"></div>
         </div>
+        <div class="group">
+          <div class="ghead"><span class="step">2</span><h3>Salsas incluidas</h3><span class="cnt" id="tcnt"></span></div>
+          <p class="rule">Elige exactamente 2 salsas · incluidas en el precio.</p>
+          <div id="tsauces" class="grid"></div>
+        </div>
+        <div class="group">
+          <div class="ghead"><span class="step">3</span><h3>¿Quieres salsa adicional?</h3><span class="cnt-label">Vaso de 9 oz · se cobra aparte</span></div>
+          <div id="tcups" class="grid addons"></div>
+        </div>
+        <div class="group"><div class="ghead"><span class="step">4</span><h3>¿ALGUNA INDICACIÓN ESPECIAL?</h3><span class="cnt-label" id="tncount"></span></div><textarea id="tnote" rows="2" placeholder="Ej: bien crocantes."></textarea></div>
       </div>
-    </div>
-    <div class="tender-layout">
-      <div class="tender-options">
-        <label class="tender-field" for="tenderPack">Elige tu presentación
-          <select id="tenderPack">
-            <option value="5">Tenders X5 — $22.000 (1 porción de papas)</option>
-            <option value="10">Tenders X10 — $32.000 (1 porción de papas)</option>
-            <option value="15">Tenders X15 — $45.000 (2 porciones de papas)</option>
-            <option value="20">Tenders X20 — $55.000 (3 porciones de papas)</option>
-          </select>
-        </label>
-        <label class="tender-field" for="tenderQty">Cantidad de combos
-          <input id="tenderQty" type="number" min="1" max="10" value="1" inputmode="numeric">
-        </label>
-        <div class="tender-included"><strong>Papas incluidas:</strong> <span id="tenderFries">1 porción de papas a la francesa</span><br><strong>Además:</strong> 2 salsas pequeñas por cada combo.</div>
-        <div class="tender-sauces">
-          <label class="tender-field" for="tenderSauce1">Salsa pequeña 1
-            <select id="tenderSauce1"><option>Miel picante</option><option>Miel mostaza</option><option>Aceitunas</option></select>
-          </label>
-          <label class="tender-field" for="tenderSauce2">Salsa pequeña 2
-            <select id="tenderSauce2"><option>Miel mostaza</option><option>Miel picante</option><option>Aceitunas</option></select>
-          </label>
-        </div>
-        <div class="tender-extra">
-          <label class="tender-field" for="tenderExtraQty">Vasos adicionales de salsa (9 oz) — $5.000 c/u
-            <input id="tenderExtraQty" type="number" min="0" max="10" value="0" inputmode="numeric">
-          </label>
-          <label class="tender-field" for="tenderExtraSauce">Salsa adicional
-            <select id="tenderExtraSauce"><option>Miel picante</option><option>Miel mostaza</option><option>Aceitunas</option></select>
-          </label>
-        </div>
-      </div>
-      <aside class="tender-ticket">
-        <p class="tender-eyebrow">TU PEDIDO</p>
-        <p id="tenderSummary">Chicken Tenders x5 · 1 combo</p>
-        <p class="tender-total" id="tenderTotal">$22.000</p>
-        <button type="button" class="btn" id="tenderWhatsApp">Continuar con mis datos</button>
-        <form id="tenderCustomerForm" class="tender-customer-form" hidden novalidate>
-          <h3>Antes de enviar tu pedido</h3>
-          <p>Completa tus datos para que podamos preparar y entregar tu pedido correctamente.</p>
-          <label class="tender-field" for="tenderCustomerName">Nombre completo
-            <input id="tenderCustomerName" name="name" autocomplete="name" required maxlength="100" placeholder="¿A nombre de quién va el pedido?">
-          </label>
-          <label class="tender-field" for="tenderCustomerAddress">Dirección y barrio
-            <input id="tenderCustomerAddress" name="address" autocomplete="street-address" required maxlength="180" placeholder="Dirección, barrio y referencias">
-          </label>
-          <label class="tender-field" for="tenderPaymentMethod">Método de pago
-            <select id="tenderPaymentMethod" name="payment" required>
-              <option value="">Selecciona cómo vas a pagar</option>
-              <option value="Efectivo">Efectivo</option>
-              <option value="Transferencia">Transferencia</option>
-            </select>
-          </label>
-          <label class="tender-field" id="tenderCashField" for="tenderCashAmount">¿Con cuánto pagas? (para calcular las vueltas)
-            <input id="tenderCashAmount" name="cashAmount" type="number" min="1" step="1000" inputmode="numeric" placeholder="Ej. 50000">
-          </label>
-          <p id="tenderFormError" class="tender-form-error" role="alert" hidden></p>
-          <button type="submit" class="btn" id="tenderSendWhatsApp">Confirmar y enviar por WhatsApp</button>
-        </form>
-        <small>El domicilio se confirma por WhatsApp y no está incluido en este total.</small>
+      <aside class="ticket" aria-label="Tus tenders">
+        <h3>Tus tenders</h3>
+        <ul id="ttlines"></ul>
+        <p id="terrs" class="errs" role="alert"></p>
+        <button class="btn" id="tadd">Agregar al pedido</button>
+        <button type="button" class="go" data-go="resumen">Ver pedido (<b class="count">0</b>)</button>
       </aside>
     </div>
   </section>
@@ -179,6 +123,5 @@
 <script src="js/core.js?v=4"></script>
 <script src="js/order.js?v=4"></script>
 <script src="js/app.js?v=4"></script>
-<script src="js/tenders.js?v=2"></script>
 </body>
 </html>

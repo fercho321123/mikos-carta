@@ -15,11 +15,15 @@ MK.orders = { KEY: "mikos-orders-v1", list() { try { return JSON.parse(localStor
 
 // Foto fija del pedido: nombres y precios ya resueltos, listo para guardar/enviar a un panel futuro
 MK.buildOrder = (id, lines, cust) => {
-  let n = 0; const unit = "BURRITO";
+  let nb = 0, nt = 0; const tag = (k) => String(k).padStart(2, "0");
   const items = lines.map((l) => {
-    const p = MK.price(l), from = n + 1; n += l.qty;
-    const tag = (k) => String(k).padStart(2, "0");
-    return { label: `${unit} ${tag(from)}${l.qty > 1 ? "-" + tag(n) : ""}`, qty: l.qty, size: MK.size(l.size).name, combo: l.combo, drink: l.drink, picks: MK.clone(l.picks), extras: MK.addonList(l), note: l.note || "", unitPrice: p.unit, total: p.total };
+    const p = MK.price(l);
+    if (l.kind === "tenders") {
+      const pk = MK.tenders.pkg(l.pkg), from = nt + 1; nt += l.qty;
+      return { kind: "tenders", label: `TENDERS ${tag(from)}${l.qty > 1 ? "-" + tag(nt) : ""}`, qty: l.qty, pkgName: pk.name, pieces: pk.pieces, fries: pk.fries, sauces: l.sauces.slice(), cups: MK.tenders.cupList(l), note: l.note || "", unitPrice: p.unit, total: p.total };
+    }
+    const from = nb + 1; nb += l.qty;
+    return { kind: "burrito", label: `BURRITO ${tag(from)}${l.qty > 1 ? "-" + tag(nb) : ""}`, qty: l.qty, size: MK.size(l.size).name, combo: l.combo, drink: l.drink, picks: MK.clone(l.picks), extras: MK.addonList(l), note: l.note || "", unitPrice: p.unit, total: p.total };
   });
   return { id, status: "NUEVO", createdAt: new Date().toISOString(), type: "DOMICILIO", customer: { ...cust }, items, totals: MK.totals(lines) };
 };
@@ -31,9 +35,18 @@ MK.whatsapp = (o) => {
   out.push(L, "*MIKOS*", `*PEDIDO ${o.id}*`, L, `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`,
     "", "*CLIENTE*", MK.clean(c.nombre), "", "*TELÉFONO*", MK.digits(c.tel).replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3"), "", "*TIPO*", o.type, "",
     "*DIRECCIÓN*", MK.clean(c.dir), `Barrio/Vereda: ${MK.clean(c.barrio)}`, ...(c.ref ? [`Ref: ${MK.clean(c.ref)}`] : []));
-  const total = o.items.reduce((s, i) => s + i.qty, 0);
-  out.push("", `*TOTAL BURRITOS: ${total}*`);
+  const totalB = o.items.filter((i) => i.kind !== "tenders").reduce((s, i) => s + i.qty, 0);
+  const totalT = o.items.filter((i) => i.kind === "tenders").reduce((s, i) => s + i.qty, 0);
+  if (totalB) out.push("", `*TOTAL BURRITOS: ${totalB}*`);
+  if (totalT) out.push("", `*TOTAL TENDERS: ${totalT}*`);
   o.items.forEach((i) => {
+    if (i.kind === "tenders") {
+      out.push("", L, `*${i.label}*${i.qty > 1 ? ` (${i.qty} IGUALES)` : ""}`, L, "", "*Paquete:*", i.pkgName.toUpperCase(), "", `*Piezas:* ${i.pieces}`, "", "*Papas incluidas:*", i.fries, "", "*Salsas incluidas:*", ...i.sauces.map((x) => "✓ " + x));
+      if (i.cups.length) out.push("", "*Salsa adicional (vaso 9 oz):*", ...i.cups.map((c) => `✓ ${c.n} x${c.q}`));
+      if (i.note) out.push("", "*Observaciones:*", MK.clean(i.note));
+      out.push("", `*Precio:* ${MK.money(i.unitPrice)}${i.qty > 1 ? ` c/u · ${MK.money(i.total)}` : ""}`);
+      return;
+    }
     out.push("", L, `*${i.label}*${i.qty > 1 ? ` (${i.qty} IGUALES)` : ""}`, L, "", "*Tamaño:*", i.size.toUpperCase(), "", "*Modalidad:*", i.combo ? "COMBO (papas a la francesa + gaseosa)" : "SOLO");
     MK.KEYS.forEach((g) => out.push("", `*${MIKOS.groups[g].title}:*`, ...i.picks[g].map((x) => "✓ " + x)));
     if (i.extras.length) out.push("", "*Extras:*", ...i.extras.map((e) => `✓ EXTRA: ${e.n}${e.q > 1 ? " x" + e.q : ""}`));

@@ -11,10 +11,10 @@ const MIKOS = {
   maxNote: 200,            // Máx. caracteres de observaciones
   maxQty: 10,              // Máx. unidades iguales por burrito
   sizes: [
-    { id: "mediano", name: "Mediano", priceSolo: 25000, priceCombo: 33000,
+    { id: "mediano", name: "Mediano", priceSolo: 22900, priceCombo: 30900,
       includes: ["doble Tortilla", "Arroz", "Queso doble crema", "Sour cream"],
       rules: { veg: 1, prot: 1, top: 1, esp: 1, salsa: 2 } },
-    { id: "xl",      name: "XL",      priceSolo: 30000, priceCombo: 38000,
+    { id: "xl",      name: "XL",      priceSolo: 26900, priceCombo: 34900,
       includes: ["doble Tortilla", "Arroz", "Queso doble crema", "Sour cream"],
       rules: { veg: 1, prot: 2, top: 2, esp: 1, salsa: 2 } }
   ],
@@ -41,5 +41,17 @@ const MIKOS = {
   
   extras: [
     { n: "Queso extra", price: 2000 }
-  ]
+  ],
+
+  // --- Chicken tenders: paquetes de tamaño fijo, no se arman por grupos como el burrito ---
+  tenders: {
+    // Mismas 3 salsas del burrito (reusan sus fotos en img/items/). Cada paquete incluye 2, a elegir aquí.
+    sauces: ["Salsa miel picante", "Salsa de mostaza y miel", "Salsa aceitunas"],
+    sauceCupPrice: null, // TODO: precio del vaso de 9 oz de salsa adicional. null = "Precio por confirmar"
+    packages: [
+      { id: "t5",  name: "Tenders x5",  pieces: 5,  fries: "1 porción de papas a la francesa",              price: 22000 },
+      { id: "t10", name: "Tenders x10", pieces: 10, fries: "2 porciones de papas a la francesa",             price: 32000 },
+      { id: "t20", name: "Tenders x20", pieces: 20, fries: "3 porciones de papas a la francesa (150 g c/u)", price: 45000 }
+    ]
+  }
 };
