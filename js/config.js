@@ -21,7 +21,7 @@ const MIKOS = {
   comboNote: "El combo agrega papas a la francesa + gaseosa",
 
   groups: {
-    prot: { title: "Proteína", addPrice: 5000, items: [
+    prot: { title: "Proteína", addPrice: 6000, items: [
       { n: "Carne de res",   note: "Porción 130 g" },
       { n: "Carne de cerdo", note: "Porción 130 g" },
       { n: "Pollo salsa",    note: "Porción 130 g" } ] },
@@ -32,15 +32,15 @@ const MIKOS = {
       { n: "Maicito" }, { n: "Huevo frito" }, { n: "Nachos triturados" }, { n: "Plátano maduro" }, { n: "Piña" } ] },
     esp: { title: "Topping especial", items: [
       { n: "Chorizo",    addPrice: 6000 },
-      { n: "Chicharrón", addPrice: 5000 },
-      { n: "Tocineta",   addPrice: 3000 } ] },
+      { n: "Chicharrón", addPrice: 6000 },
+      { n: "Tocineta",   addPrice: 4000 } ] },
     salsa: { title: "Salsa", addPrice: 2000, items: [
       { n: "Salsa de la casa" }, { n: "Salsa de guacamole" }, { n: "Salsa miel picante" },
       { n: "Salsa BBQ" }, { n: "Salsa aceitunas" }, { n: "Salsa de mostaza y miel" } ] }
   },
   
   extras: [
-    { n: "Queso extra", price: 2000 }
+    { n: "Queso extra", price: 3000 }
   ],
 
   // --- Chicken tenders: paquetes de tamaño fijo, no se arman por grupos como el burrito ---
