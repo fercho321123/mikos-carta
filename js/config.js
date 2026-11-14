@@ -3,25 +3,25 @@ const MIKOS = {
   whatsapp: "573222105073",
   pagos: ["Efectivo", "Transferencia"],
  
-  promo: "",
+  promo: "Lun a Dom · 5:00 pm a 10:00 pm",
   // --- Datos que NO existían: déjalos vacíos hasta tenerlos (la app los oculta o dice "por confirmar") ---
   schedule: "",            // Ej: "Lun a Dom · 5:00 pm a 10:00 pm"  (vacío = no se muestra)
-  delivery: { fee: null }, // Valor del domicilio en pesos. null = "Por confirmar"
+  delivery: { fee: 3.000 }, // Valor del domicilio en pesos. null = "Por confirmar"
   drinks: [],              // Ej: ["Coca-Cola", "Colombiana"]. Vacío = el combo dice solo "Gaseosa"
   maxNote: 200,            // Máx. caracteres de observaciones
   maxQty: 10,              // Máx. unidades iguales por burrito
   sizes: [
-    { id: "mediano", name: "Mediano", priceSolo: 24900, priceCombo: 32900,
+    { id: "mediano", name: "Mediano", priceSolo: 26900, priceCombo: 34900,
       includes: ["Tortilla", "Arroz", "Queso doble crema", "Sour cream"],
       rules: { veg: 1, prot: 1, top: 1, esp: 1, salsa: 2 } },
-    { id: "xl",      name: "XL",      priceSolo: 29900, priceCombo: 37900,
+    { id: "xl",      name: "XL",      priceSolo: 31900, priceCombo: 39900,
       includes: ["Tortilla", "Arroz", "Queso doble crema", "Sour cream"],
       rules: { veg: 1, prot: 2, top: 2, esp: 1, salsa: 2 } }
   ],
   comboNote: "El combo agrega papas a la francesa + gaseosa",
 
   groups: {
-    prot: { title: "Proteína", addPrice: 6000, items: [
+    prot: { title: "Proteína", addPrice: 8000, items: [
       { n: "Carne de res",   note: "Porción 130 g" },
       { n: "Carne de cerdo", note: "Porción 130 g" },
       { n: "Pollo salsa",    note: "Porción 130 g" } ] },
@@ -33,7 +33,7 @@ const MIKOS = {
     esp: { title: "Topping especial", items: [
       { n: "Chorizo",    addPrice: 6000 },
       { n: "Chicharrón", addPrice: 6000 },
-      { n: "Tocineta",   addPrice: 4000 } ] },
+      { n: "Tocineta",   addPrice: 6000 } ] },
     salsa: { title: "Salsa", addPrice: 2000, items: [
       { n: "Salsa de la casa" }, { n: "Salsa de guacamole" }, { n: "Salsa miel picante" },
       { n: "Salsa BBQ" }, { n: "Salsa aceitunas" }, { n: "Salsa de mostaza y miel" } ] }
